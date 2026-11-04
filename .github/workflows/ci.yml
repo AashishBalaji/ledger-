@@ -108,6 +108,11 @@ jobs:
             postgres:16-alpine
           for i in $(seq 1 20); do
             docker exec ledger-ci-postgres pg_isready -U ledger -d ledger && break
+            if [ "$i" -eq 20 ]; then
+              echo "Postgres never became ready" >&2
+              docker logs ledger-ci-postgres
+              exit 1
+            fi
             sleep 2
           done
           docker run -d --name ledger-ci-app --network ledger-ci-net -p 8000:8000 \
