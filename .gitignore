@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.benchmarks/
+.hypothesis/
+.ruff_cache/
+*.egg-info/
+current-benchmarks.json
+pytest-output.txt
+benchmark-compare-output.txt
+triage-report.md

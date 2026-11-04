@@ -1,0 +1,44 @@
+[project]
+name = "ledger"
+version = "0.1.0"
+description = "Inventory optimization engine with a validated, benchmarked test harness"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "pydantic>=2.9",
+    "scipy>=1.14",
+    "numpy>=2.1",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-benchmark>=5.1",
+    "hypothesis>=6.115",
+    "httpx>=0.27",
+    "ruff>=0.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ledger*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+# B008 (no function calls in argument defaults) fires on FastAPI's
+# `Depends(...)` pattern, which is the framework's documented, correct way
+# to declare per-request dependencies -- not a bug to fix here.
+"ledger/api/main.py" = ["B008"]
