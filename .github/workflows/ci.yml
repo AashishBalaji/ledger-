@@ -113,6 +113,13 @@ jobs:
           docker run -d --name ledger-ci-app --network ledger-ci-net -p 8000:8000 \
             -e DATABASE_URL=postgresql+psycopg2://ledger:ledger@ledger-ci-postgres:5432/ledger \
             ledger-app:ci
-          sleep 5
-          curl --fail http://localhost:8000/health
+          for i in $(seq 1 20); do
+            curl --fail http://localhost:8000/health && break
+            if [ "$i" -eq 20 ]; then
+              echo "App never became healthy" >&2
+              docker logs ledger-ci-app
+              exit 1
+            fi
+            sleep 2
+          done
           docker logs ledger-ci-app

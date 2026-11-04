@@ -77,15 +77,27 @@ curl http://localhost:8000/health
 ## Kubernetes
 
 `k8s/` has a namespace, a Postgres StatefulSet, and a Deployment+Service
-for the app, with readiness/liveness probes on both. These validate
-cleanly against the real Kubernetes API schemas (`kubeconform -strict`,
-all 7 resources pass). I was not able to get a live `kind` cluster running
-in the sandboxed environment these were built in — `kind`'s control-plane
-node needs cgroup delegation that nested-container sandbox didn't have —
-so stating that plainly rather than claiming a deploy that didn't happen:
-these manifests are schema-valid and ready to try with `kind` or
-`minikube` on a normal machine, but haven't been exercised against a live
-cluster yet.
+for the app, with readiness/liveness probes on both, a Secret for
+credentials, and a ConfigMap for non-secret connection details only (the
+app resolves its full `DATABASE_URL` in-process from the two — see
+`ledger/api/db.py` — so no password is ever written into a non-secret
+object). These validate cleanly against the real Kubernetes API schemas
+(`kubeconform -strict`, all 7 resources pass).
+
+I made two attempts at a live cluster in the sandboxed environment these
+were built in. `kind` failed outright: its kubeadm-based control-plane
+node needs cgroup delegation the sandbox's cgroup v1 setup doesn't
+support. `k3d` got further — its lighter-weight control-plane node does
+start, and I used it to actually import the built image and `kubectl
+apply` these exact manifests — but every real pod still fails at sandbox
+creation with `runc create failed: ... can't get final child's PID from
+pipe`, the same underlying cgroup v1 nested-delegation gap, just hit one
+layer deeper (control plane vs. workload sandboxes). So, stating this
+plainly rather than claiming a deploy that didn't happen: these manifests
+are schema-valid, have been applied against a real (if partially
+functional) cluster, and are ready to actually run end-to-end with `kind`,
+`k3d`, or `minikube` on a machine with normal cgroup v2 support — they
+just haven't been exercised to a fully Ready pod in this sandbox.
 
 ## CI/CD
 

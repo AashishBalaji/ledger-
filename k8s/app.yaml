@@ -4,7 +4,13 @@ metadata:
   name: ledger-app-config
   namespace: ledger
 data:
-  DATABASE_URL: "postgresql+psycopg2://ledger:ledger@postgres:5432/ledger"
+  # Non-secret connection details only. Credentials come from the
+  # ledger-postgres-secret Secret (see postgres.yaml) via envFrom below,
+  # and ledger/api/db.py builds the full DATABASE_URL in-process from the
+  # two sources -- the password is never written into a ConfigMap or any
+  # other non-secret object.
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -28,6 +34,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: ledger-app-config
+            - secretRef:
+                name: ledger-postgres-secret
           ports:
             - containerPort: 8000
           readinessProbe:

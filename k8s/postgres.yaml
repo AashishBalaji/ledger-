@@ -44,6 +44,21 @@ spec:
           envFrom:
             - secretRef:
                 name: ledger-postgres-secret
+          env:
+            # Explicit (not just envFrom) so $(POSTGRES_USER)/$(POSTGRES_DB)
+            # below are guaranteed available for Kubernetes' own $(VAR)
+            # command-substitution, rather than relying on envFrom-sourced
+            # vars being expandable the same way.
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ledger-postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ledger-postgres-secret
+                  key: POSTGRES_DB
           ports:
             - containerPort: 5432
           volumeMounts:
@@ -52,14 +67,21 @@ spec:
               subPath: pgdata  # avoids postgres's lost+found-in-empty-volume complaint
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "ledger", "-d", "ledger"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "ledger", "-d", "ledger"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
             initialDelaySeconds: 15
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
   volumeClaimTemplates:
     - metadata:
         name: pgdata
